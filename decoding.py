@@ -9,9 +9,13 @@ http://www.cmegroup.com/confluence/display/EPICSANDBOX/Matching+Algorithms
 
 Tick Rule / Cabinet Price / Settlement / Opening
 http://www.cmegroup.com/confluence/display/EPICSANDBOX/Pricing
+http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP3+Variable+Tick+Table
 
-Underlying Product code
+Definition:
+http://www.cmegroup.com/confluence/display/EPICSANDBOX/Market+Data+-+Security+Definition
 
+MDP3 Message Specification
+http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP3+-+Market+Data+Snapshot+Full+Refresh
 '''
 
 import struct
