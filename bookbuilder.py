@@ -23,7 +23,7 @@ class BookBuilder:
         
     def printBook(self):
         print(' '*9 + 'bid   ask' + ' '*9)        
-        for i in range(self.maxlevel):
+        for i in range(self.numlevels):
             linestr = (' '*13 if self.bid[i] == self.nonetuple else 
                        '{0:>4d} {1:>7.2f} '.format(self.bid[i].size, self.bid[i].price))
             linestr += (('@'+' '*13) if self.ask[i] == self.nonetuple else 
