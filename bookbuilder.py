@@ -19,8 +19,6 @@ class BookBuilder:
         self.bid = [self.nonetuple] * numlevels
         self.ask = [self.nonetuple] * numlevels
         
-        self.tradecount = 0
-        
     def printBook(self):
         print(' '*9 + 'bid   ask' + ' '*9)        
         for i in range(self.numlevels):
@@ -29,20 +27,9 @@ class BookBuilder:
             linestr += (('@'+' '*13) if self.ask[i] == self.nonetuple else 
                         '@ {0:>7.2f} {1:>4d}'.format(self.ask[i].price, self.ask[i].size))
             print(linestr)
-        
-    def process(self, tempid, incoming):
-        if tempid == 32:
-            self.processBookUpd(incoming)
-        elif tempid == 42:
-            self.processTrade(incoming)
-        elif tempid == 38:
-            self.refreshFromSnap(incoming)
-        else:
-            return
-            print('passing tempid {}'.format(tempid))
-        
+
     def processBookUpd(self, entry):
-        
+        ''' for tempid = 32 '''
         if entry.MDEntryType == 'Bid':
             side = self.bid            
         elif entry.MDEntryType == 'Offer':
@@ -61,18 +48,12 @@ class BookBuilder:
             side.append(self.nonetuple)
         else:
             raise Exception('Dont know what to do! {}'.format(entry))
-        
-    def processTrade(self, entry):
-        self.tradecount += 1
-        if self.tradecount < 20:        
-            print(entry.MDEntryPx, entry.MDEntrySize, entry.AggressorSide, entry.NumberOfOrders)
-    
+
     def refreshFromSnap(self, msg):
-        ''' from snap messages, make this the current book '''
-        self.bid = [self.nonetuple] * self.numlevels
-        self.ask = [self.nonetuple] * self.numlevels
-        #self.time = msg.TransactTime
-        #self.seq = msg.LastMsgSeqNumProcessed
+        ''' from snap messages (tempid 38), make this the current book '''
+        for i in range(self.numlevels):
+            self.bid[i] = self.nonetuple
+            self.ask[i] = self.nonetuple
         for e in msg.MDEntries:
             if e.MDEntryType == 'Bid':
                 side = self.bid
