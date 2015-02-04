@@ -69,3 +69,12 @@ filepost = {'I': 'incr',
             'N': 'defn'}
 
 folder = '/gfs/qsa/userdata/hluo/'
+
+def recordPath(date, feed, typ):
+    ''' 
+    returns path of recording
+    Feed: F / O;  typ: I / S / N
+    '''
+    return '_'.join( [folder + filepre[feed],
+                      str(date),
+                      filepost[typ] ] )
