@@ -14,6 +14,9 @@ http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP3+Variable+Tick+Table
 Definition:
 http://www.cmegroup.com/confluence/display/EPICSANDBOX/Market+Data+-+Security+Definition
 
+For FLOAT/INTPRICE distinctions, check:
+http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP3+-+Security+Definition
+
 MDP3 Message Specification
 http://www.cmegroup.com/confluence/display/EPICSANDBOX/MDP3+-+Market+Data+Snapshot+Full+Refresh
 '''
