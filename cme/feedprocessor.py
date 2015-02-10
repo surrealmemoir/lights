@@ -94,7 +94,7 @@ class CleanFeedSyncer:
                 raise Exception('Conflicting numreport_snap prev {} cur {}'.format(self.numreport_defn, msg.TotNumReports))
                 
         if len(self.rawtuple) == self.numreport_defn:
-            print('Done collection definition')
+            print('Done collecting definition')
             self.syncstatus = 2
     
     def flushDefnSnap(self):
@@ -173,7 +173,7 @@ class CleanFeedSyncer:
         
     def _processIncrMsgFast(self, recvtime, tempid, msg):        
         if tempid in [32, 33, 34, 35, 37, 42]:            
-            for e in msg.MDEntries:
+            for e in getattr(msg, 'MDEntries' + str(tempid)):
                 self.lastseqdict[e.SecurityID] = e.RptSeq                    
                 self.client(recvtime, msg.TransactTime, tempid, e)            
         elif tempid in [27, 29, 41]:
@@ -182,7 +182,7 @@ class CleanFeedSyncer:
         elif tempid == 30:            
             self.client(recvtime, msg.TransactTime, tempid, msg)
         elif tempid == 39:
-            for e in msg.MDEntries:
+            for e in msg.RelatedSym:
                 self.client(recvtime, msg.TransactTime, tempid, e)   
         else:
             ''' unimportant messages '''
@@ -192,7 +192,7 @@ class CleanFeedSyncer:
     def _processIncrMsgSlow(self, recvtime, tempid, msg):
         ''' Checks per ID sequence number and reports gaps per ID '''
         if tempid in [32, 33, 34, 35, 37, 42]:
-            for e in msg.MDEntries:
+            for e in getattr(msg, 'MDEntries' + str(tempid)):
                 if e.RptSeq < self.lastseqdict[e.SecurityID] + 1:
                     continue
                 assert e.RptSeq == self.lastseqdict[e.SecurityID] + 1, \
@@ -206,9 +206,32 @@ class CleanFeedSyncer:
         elif tempid == 30:
             self.client(recvtime, msg.TransactTime, tempid, msg)
         elif tempid == 39:
-            for e in msg.MDEntries:
+            for e in msg.RelatedSym:
                 self.client(recvtime, msg.TransactTime, tempid, e)
         else:
             ''' unimportant messages '''
             print(msg)
             self.client(recvtime, 0, tempid, msg)
+          
+class DeMultiplexer:
+    def __init__(self, client_creator, **kwargs):
+        self.clients = {}
+        self.client_creator = client_creator
+        self.kwargs = kwargs
+        self.instrumentManager = 0 
+        
+    def __call__(self, recvtime, transtime, tempid, msg):
+        if tempid in [27, 29, 41]:
+            #self.instrumentManager.update(msg)
+            if msg.SecurityID not in self.clients:
+                self.clients[msg.SecurityID] = self.client_creator(tempid, msg, **self.kwargs)
+            else:
+                raise Exception('Need to have definition first')
+        elif tempid == 30:
+            #impactids = self.instrumentManager.lookup(msg)
+            impactids = []
+            for i in impactids:
+                self.clients[i](recvtime, transtime, tempid, msg)
+        else:
+            self.clients[msg.SecurityID](recvtime, transtime,tempid, msg)
+
