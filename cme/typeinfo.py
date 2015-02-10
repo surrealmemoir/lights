@@ -201,12 +201,39 @@ class MsgNames:
     OptDefMsg  = "MDInstrumentDefinitionOption41"
     # Snapshot
     SnapMsg    = "SnapshotFullRefresh38"
+
+# Group Names
+class GN:
+    # id = 268
+    ResetEntries        = "MDEntries4"
+    IncrEntries         = "MDEntries32"
+    DailyStatEntries    = "MDEntries33"
+    LimitEntries        = "MDEntries34"
+    SessionStatEntries  = "MDEntries35"
+    VolumeEntries       = "MDEntries37"
+    SnapEntries         = "MDEntries38"
+    TradeEntries        = "MDEntries42"
+    # id = 37705
+    OrderEntries        = "OrderIDEntries"
+    # id = 864
+    Events              = "Events"
+    # id = 1141
+    MDFeedTypes         = "MDFeedTypes"
+    # id = 870
+    InstAttrib          = "InstAttrib"
+    # id = 1234
+    LotTypeRules        = "LotTypeRules"
+    # id = 555
+    Legs                = "Legs"
+    # id = 711
+    Underlyings         = "Underlyings"
+    # id = 146
+    QuoteSym            = "RelatedSym"
     
 # Field Names
 class FN:    
     TransTime  = "TransactTime"             # 60
     EventIndi  = "MatchEventIndicator"      # 5799
-    MDEntries  = "MDEntries"                # 268     group
     Price      = "MDEntryPx"                # 270
     Size       = "MDEntrySize"              # 271
     SecID      = "SecurityID"               # 48
@@ -218,8 +245,6 @@ class FN:
     AggSide    = "AggressorSide"            # 5797
     OrderID    = "OrderID"                  # 37
     LastQty    = "LastQty"                  # 32
-    OrderEntries = "OrderIDEntries"         # 37705    group 
-    # Below is for definitions
     TotNumReports = "TotNumReports"         # 911
     SecUpdAct  = "SecurityUpdateAction"     # 980
     LastUpdTm  = "LastUpdateTime"           # 779
@@ -268,13 +293,7 @@ class FN:
     PutOrCall  = "PutOrCall"                # 201
     StrikePx   = "StrikePrice"              # 202
     StrikeCcy  = "StrikeCurrency"           # 947
-    MinCabPx   = "MinCabPrice"              # 9850    
-    Events     = "Events"                   # 864     group
-    MDFeedTypes= "MDFeedTypes"              # 1141    group
-    InstAttrib = "InstAttrib"               # 870     group
-    LotTypeRules  = "LotTypeRules"          # 1234    group
-    Legs       = "Legs"                     # 555     group
-    Underlyings= "Underlyings"              # 711     group
+    MinCabPx   = "MinCabPrice"              # 9850
     SecSubType = "SecuritySubType"          # 762
     PxRatio    = "PriceRatio"               # 5770
     TickRule   = "TickRule"                 # 6350
@@ -304,47 +323,47 @@ class FN:
 #Names of messages and fields
 
 # id = 32
-RefreshMessage = namedtuple(MsgNames.RefreshMsg, [FN.TransTime, FN.EventIndi, FN.MDEntries])
-RefreshMDEntry = namedtuple(FN.MDEntries, [FN.SecID, FN.SecSeq, FN.Price, FN.Size, 
+MDIncrementalRefreshBook32 = namedtuple(MsgNames.RefreshMsg, [FN.TransTime, FN.EventIndi, GN.IncrEntries])
+MDEntries32 = namedtuple(GN.IncrEntries, [FN.SecID, FN.SecSeq, FN.Price, FN.Size, 
                                            FN.NumOrders, FN.BookLevel, FN.UpdAction, FN.EntryType])
 
 # id = 42
-TradeMessage = namedtuple(MsgNames.TradeMsg,[FN.TransTime, FN.EventIndi, FN.MDEntries, FN.OrderEntries])
-TradeEntry = namedtuple(FN.MDEntries, [FN.SecID, FN.SecSeq, FN.Price, FN.Size, 
+MDIncrementalRefreshTradeSummary42 = namedtuple(MsgNames.TradeMsg,[FN.TransTime, FN.EventIndi, GN.TradeEntries, GN.OrderEntries])
+MDEntries42 = namedtuple(GN.TradeEntries, [FN.SecID, FN.SecSeq, FN.Price, FN.Size, 
                                        FN.NumOrders, FN.AggSide, FN.UpdAction])
-OrderEntry = namedtuple(FN.OrderEntries, [FN.OrderID, FN.LastQty])
+OrderIDEntries = namedtuple(GN.OrderEntries, [FN.OrderID, FN.LastQty])
 
 # id = 37
-VolumeMessage = namedtuple(MsgNames.VolumeMsg, [FN.TransTime, FN.EventIndi, FN.MDEntries])
-VolumeMDEntry = namedtuple(FN.MDEntries, [FN.SecID, FN.SecSeq, FN.Size, FN.UpdAction])
+MDIncrementalRefreshVolume37 = namedtuple(MsgNames.VolumeMsg, [FN.TransTime, FN.EventIndi, GN.VolumeEntries])
+MDEntries37 = namedtuple(GN.VolumeEntries, [FN.SecID, FN.SecSeq, FN.Size, FN.UpdAction])
 
 # id = 35
-StatMessage = namedtuple(MsgNames.StatMsg, [FN.TransTime, FN.EventIndi, FN.MDEntries])
-StatMDEntry = namedtuple(FN.MDEntries, [FN.Price, FN.SecID, FN.SecSeq, FN.OpenCloseSettlFlag,
+MDIncrementalRefreshSessionStatistics35 = namedtuple(MsgNames.StatMsg, [FN.TransTime, FN.EventIndi, GN.SessionStatEntries])
+MDEntries35 = namedtuple(GN.SessionStatEntries, [FN.Price, FN.SecID, FN.SecSeq, FN.OpenCloseSettlFlag,
                                         FN.UpdAction, FN.EntryType])
 
 # id = 33
-DailyStatMessage = namedtuple(MsgNames.DailyStatMsg, [FN.TransTime, FN.EventIndi, FN.MDEntries])
-DailyStatMDEntry = namedtuple(FN.MDEntries, [FN.Price, FN.Size, FN.SecID, FN.SecSeq, FN.TrdRefDate,
+MDIncrementalRefreshDailyStatistics33 = namedtuple(MsgNames.DailyStatMsg, [FN.TransTime, FN.EventIndi, GN.DailyStatEntries])
+MDEntries33 = namedtuple(GN.DailyStatEntries, [FN.Price, FN.Size, FN.SecID, FN.SecSeq, FN.TrdRefDate,
                                              FN.SettlPxType, FN.UpdAction, FN.EntryType])
 
 # id = 30
-SecurityStatusMessage = namedtuple(MsgNames.StatusMsg, [FN.TransTime, FN.SecGroup, FN.Asset,
+SecurityStatus30 = namedtuple(MsgNames.StatusMsg, [FN.TransTime, FN.SecGroup, FN.Asset,
                                                         FN.SecID, FN.TradeDate, FN.EventIndi,
                                                         FN.TradingStatus, FN.HaltReason, FN.TradingEvent])
 
 # id = 34
-LimitMessage = namedtuple(MsgNames.LimitMsg, [FN.TransTime, FN.EventIndi, FN.MDEntries])
-LimitMDEntry = namedtuple(FN.MDEntries, [FN.HighLimPx, FN.LowLimPx, FN.MaxPxChng, 
+MDIncrementalRefreshLimitsBanding34 = namedtuple(MsgNames.LimitMsg, [FN.TransTime, FN.EventIndi, GN.LimitEntries])
+MDEntries34 = namedtuple(GN.LimitEntries, [FN.HighLimPx, FN.LowLimPx, FN.MaxPxChng, 
                                          FN.SecID, FN.SecSeq])
 
 # id = 39
-QuoteRequestMessage = namedtuple(MsgNames.QuoteRequestMsg, [FN.TransTime, FN.QuoteReqID, FN.EventIndi, FN.MDEntries])
-QuoteRequestMDEntry = namedtuple(FN.MDEntries, [FN.Symbol, FN.SecID, FN.OrderQty, FN.QuoteType, FN.QuoteSide])
+QuoteRequest39 = namedtuple(MsgNames.QuoteRequestMsg, [FN.TransTime, FN.QuoteReqID, FN.EventIndi, GN.QuoteSym])
+RelatedSym = namedtuple(GN.QuoteSym, [FN.Symbol, FN.SecID, FN.OrderQty, FN.QuoteType, FN.QuoteSide])
 
 
 # id = 27
-FutureDefnMessage = namedtuple(
+MDInstrumentDefinitionFuture27 = namedtuple(
                                MsgNames.FutDefMsg,
                                [
                                 FN.EventIndi,
@@ -390,13 +409,14 @@ FutureDefnMessage = namedtuple(
                                 FN.FlowSchedType,
                                 FN.MinPxIncrAmt,
                                 FN.UserDefInstr,
-                                FN.Events,
-                                FN.MDFeedTypes,
-                                FN.InstAttrib,
-                                FN.LotTypeRules])
+                                GN.Events,
+                                GN.MDFeedTypes,
+                                GN.InstAttrib,
+                                GN.LotTypeRules
+                                ])
 
 # id = 29
-SpreadDefnMessage = namedtuple(MsgNames.SprdDefMsg, 
+MDInstrumentDefinitionSpread29 = namedtuple(MsgNames.SprdDefMsg, 
                                [
                                 FN.EventIndi,
                                 FN.TotNumReports,
@@ -435,14 +455,14 @@ SpreadDefnMessage = namedtuple(MsgNames.SprdDefMsg,
                                 FN.MaxPxChng,
                                 FN.MainFrac,
                                 FN.SubFrac,
-                                FN.Events,
-                                FN.MDFeedTypes,
-                                FN.InstAttrib,
-                                FN.LotTypeRules,
-                                FN.Legs
+                                GN.Events,
+                                GN.MDFeedTypes,
+                                GN.InstAttrib,
+                                GN.LotTypeRules,
+                                GN.Legs
                                 ])
 
-OptionDefnMessage = namedtuple(MsgNames.OptDefMsg,
+MDInstrumentDefinitionOption41 = namedtuple(MsgNames.OptDefMsg,
                                [
                                 FN.EventIndi,
                                 FN.TotNumReports,
@@ -485,27 +505,27 @@ OptionDefnMessage = namedtuple(MsgNames.OptDefMsg,
                                 FN.LowLimPx,
                                 FN.HighLimPx,
                                 FN.UserDefInstr,
-                                FN.Events,
-                                FN.MDFeedTypes,
-                                FN.InstAttrib,
-                                FN.LotTypeRules,
-                                FN.Underlyings
+                                GN.Events,
+                                GN.MDFeedTypes,
+                                GN.InstAttrib,
+                                GN.LotTypeRules,
+                                GN.Underlyings
                                 ])
 
-InstrumentEventEntry = namedtuple(FN.Events,[FN.EventType, FN.EventTime])
-MDFeedTypeEntry = namedtuple(FN.MDFeedTypes,[FN.MDFeedType, FN.MktDepth])
-UnderlyingEntry = namedtuple(FN.Underlyings,[FN.UnderlyingID, FN.UnderlyingSym])
-InstEligibilityEntry = namedtuple(FN.InstAttrib, [FN.InstAttribVal])
-LotTypeRulesEntry = namedtuple(FN.LotTypeRules, [FN.LotType, FN.MinLotSz])
-LegEntry = namedtuple(FN.Legs, [FN.LegSecID, FN.LegSide, FN.LegRatio, FN.LegPx, FN.LegOptDelta])
+Events = namedtuple(GN.Events,[FN.EventType, FN.EventTime])
+MDFeedTypes = namedtuple(GN.MDFeedTypes,[FN.MDFeedType, FN.MktDepth])
+Underlyings = namedtuple(GN.Underlyings,[FN.UnderlyingID, FN.UnderlyingSym])
+InstAttrib = namedtuple(GN.InstAttrib, [FN.InstAttribVal])
+LotTypeRules = namedtuple(GN.LotTypeRules, [FN.LotType, FN.MinLotSz])
+Legs = namedtuple(GN.Legs, [FN.LegSecID, FN.LegSide, FN.LegRatio, FN.LegPx, FN.LegOptDelta])
 
 # id = 38
-SnapFullMessage =  namedtuple(MsgNames.SnapMsg,
+SnapshotFullRefresh38 =  namedtuple(MsgNames.SnapMsg,
                               [FN.LastMsgSeq, FN.TotNumReports, FN.SecID, FN.SecSeq,
                                FN.TransTime, FN.LastUpdTm, FN.TradeDate, FN.TradingStatus,
-                               FN.HighLimPx, FN.LowLimPx, FN.MaxPxChng, FN.MDEntries])
+                               FN.HighLimPx, FN.LowLimPx, FN.MaxPxChng, GN.SnapEntries])
 
-SnapMDEntry = namedtuple(FN.MDEntries, [FN.Price, FN.Size, FN.NumOrders, FN.BookLevel, FN.TrdRefDate,
+MDEntries38 = namedtuple(GN.SnapEntries, [FN.Price, FN.Size, FN.NumOrders, FN.BookLevel, FN.TrdRefDate,
                                         FN.OpenCloseSettlFlag, FN.SettlPxType, FN.EntryType])
 
 
