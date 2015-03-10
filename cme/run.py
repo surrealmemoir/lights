@@ -1,6 +1,7 @@
 
 from .feedprocessor import CleanFeedSyncer
 from .settings import recordPath, addrdict
+# from .manager import GrandManager
 
 import common.infra.network as cin
 import heapq
@@ -11,29 +12,31 @@ def setupLiveSockets(receiver, addrs, client):
     sock1 = cin.prepare_mc_recv(*cin.address_string_to_tuple(addrs['I']))
     sock2 = cin.prepare_mc_recv(*cin.address_string_to_tuple(addrs['S']))
     sock3 = cin.prepare_mc_recv(*cin.address_string_to_tuple(addrs['N']))
-    handler = CleanFeedSyncer(client)
-    receiver.add_receiver(sock1, handler.processIncrPacket)
-    receiver.add_receiver(sock2, handler.processSnapPacket)
-    receiver.add_receiver(sock3, handler.processDefnPacket)
-    def activate():
-        receiver.add_receiver(sock2, handler.processSnapPacket)
-        receiver.add_receiver(sock3, handler.processDefnPacket)
-    def deactivate():
-        receiver.remove_receiver(sock2)
-        receiver.remove_receiver(sock3)
-    handler.activate_call = activate
-    handler.deactivate_call = deactivate
     
-def playlive(calldict):
+    receiver.add_receiver(sock1, client.processIncrFeed)
+    receiver.add_receiver(sock2, client.processSnapFeed)
+    receiver.add_receiver(sock3, client.processDefnFeed)
+    #def activate():
+    #    receiver.add_receiver(sock2, handler.processSnapPacket)
+    #    receiver.add_receiver(sock3, handler.processDefnPacket)
+    #def deactivate():
+    #    receiver.remove_receiver(sock2)
+    #    receiver.remove_receiver(sock3)
+    #handler.activate_call = activate
+    #handler.deactivate_call = deactivate
+
+def playlive():
     '''
     Live data.
-    sample input: { 'F': print, 'O': print }
-    This is to provide a call to the syncer that syncs the defn/snap/incr 
+    Grand Manager should have the proper calls and procchng etc.
     '''
     recv = cin.asyncio_receiver()
     
-    for k, v in calldict.items():
-        setupLiveSockets(recv, addrdict[k], v)
+    channels = ['F', 'O']
+    mgr = GrandManager(channels)
+    
+    for a in channels:
+        setupLiveSockets(recv, addrdict[a], mgr.channels[a])
     
     print('start event loop')
     try:
@@ -41,27 +44,27 @@ def playlive(calldict):
     except KeyboardInterrupt:
         recv.loop.stop()
     print('end event loop')    
-    
-def replay(date, calldict):
+
+def replay(date):
     '''
     Recorded data.
-    sample input: { 'F': print, 'O': print }
-    This is to provide a call to the syncer that syncs the defn/snap/incr 
+    Grand Manager should have the proper calls and procchng etc.
     '''
     callbacks = {}
     filepaths = {}
-    for k, v in calldict.items():
-        handler = CleanFeedSyncer(v)
-        callbacks[ k + 'I' ] = handler.processIncrPacket
-        callbacks[ k + 'S' ] = handler.processSnapPacket
-        callbacks[ k + 'N' ] = handler.processDefnPacket
+    
+    channels = ['F', 'O']
+    mgr = GrandManager(channels)
+    for a in channels:
+        callbacks[ a + 'I' ] = mgr.channels[a].processIncrFeed
+        callbacks[ a + 'S' ] = mgr.channels[a].processSnapFeed
+        callbacks[ a + 'N' ] = mgr.channels[a].processDefnFeed
         for typ in ['I', 'S', 'N']:
-            filepaths[ k + typ ] = recordPath(date, k, typ)
+            filepaths[ a + typ ] = recordPath(date, a, typ)
     
     f = lambda typ: ( (x, typ) for x in recordingReader(filepaths[typ]) )
     merged = heapq.merge( *[f(a) for a in filepaths] )
     print(dt.datetime.now())
     for (tm, packet), typ in merged:
         callbacks[typ](packet, tm)
-    print(dt.datetime.now())    
-    
+    print(dt.datetime.now())
