@@ -11,13 +11,14 @@ class BookBuilder:
     ''' class to build a book from interpreted exchange FIX messages '''
     
     leveldata = namedtuple("booklvl", ["price", "size", "numord"])
-    nonetuple = leveldata(nan, nan, nan)
+    nonetuple = leveldata(nan, 0, 0)
     
-    def __init__(self, instrumentid, numlevels):
-        self.instrumentid = instrumentid
+    def __init__(self, numlevels, displayFctr):
+        #self.instrumentid = instrumentid
         self.numlevels = numlevels
         self.bid = [self.nonetuple] * numlevels
         self.ask = [self.nonetuple] * numlevels
+        self.dispfctr = displayFctr
         
     def printBook(self):
         print(' '*9 + 'bid   ask' + ' '*9)        
@@ -29,18 +30,21 @@ class BookBuilder:
             print(linestr)
 
     def processBookUpd(self, entry):
-        ''' for tempid = 32 '''
         if entry.MDEntryType == 'Bid':
             side = self.bid            
         elif entry.MDEntryType == 'Offer':
             side = self.ask        
+        elif entry.MDEntryType in [ 'ImpliedBid', 'ImpliedOffer' ]:
+            return
         else:
             raise Exception('Unknown entry type {}'.format(entry.EntryType))
         # update book
         if entry.MDUpdateAction == 'Change':
-            side[entry.MDPriceLevel-1] = self.leveldata(entry.MDEntryPx, entry.MDEntrySize, entry.NumberOfOrders)
+            side[entry.MDPriceLevel-1] = self.leveldata(entry.MDEntryPx * self.dispfctr, 
+                                                        entry.MDEntrySize, entry.NumberOfOrders)
         elif entry.MDUpdateAction == 'New':
-            side.insert(entry.MDPriceLevel-1, self.leveldata(entry.MDEntryPx, entry.MDEntrySize, entry.NumberOfOrders))
+            side.insert(entry.MDPriceLevel-1, self.leveldata(entry.MDEntryPx * self.dispfctr, 
+                                                             entry.MDEntrySize, entry.NumberOfOrders))
             if len(side) > self.numlevels:
                 side.pop()
         elif entry.MDUpdateAction == 'Delete':
@@ -59,8 +63,17 @@ class BookBuilder:
                 side = self.bid
             elif e.MDEntryType == 'Offer':
                 side = self.ask
-            elif e.MDEntryType in [ 'ImpliedBid', 'ImpliedOffer', 'EmptyBook' ]:
-                print("NEWENTRY!!!!",e)
-            else:
+            elif e.MDEntryType in [ 'ImpliedBid', 'ImpliedOffer' ]:
+                continue                
+            elif e.MDEntryType in [ 'SessionHighBid', 'SessionLowOffer', 'SettlementPrice',
+                                    'OpenInterest', 'TradeVolume', 'ElectronicVolume',
+                                    'OpeningPrice', 'Trade', 'TradingSessionHighPrice',
+                                    'TradingSessionLowPrice',
+                                    'FixingPrice' ]:
                 continue
-            side[e.MDPriceLevel-1] = self.leveldata(e.MDEntryPx, e.MDEntrySize, e.NumberOfOrders)
+            else:
+                # [ 'EmptyBook' ]
+                print("NEWENTRY!!!!",e)
+                continue
+            side[e.MDPriceLevel-1] = self.leveldata(e.MDEntryPx * self.dispfctr, 
+                                                    e.MDEntrySize, e.NumberOfOrders)
