@@ -1,7 +1,7 @@
 
-from .feedprocessor import CleanFeedSyncer
-from .settings import recordPath, addrdict
-# from .manager import GrandManager
+#from cme.feedprocessor import CleanFeedSyncer
+from cme.settings import recordPath, addrdict
+from manager import GrandManager
 
 import common.infra.network as cin
 import heapq
