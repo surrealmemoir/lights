@@ -255,5 +255,242 @@ class BinaryOpNode(Node):
         return [self.inp0, self.inp1]
         
 
-        
+class AggOpNode(Node):
+    __slots__ = ('inp', 'op')
+    def __init__(self, inp, op, label=None):
+        self.inp = inp
+        self.op = op
+        if not label:
+            label = ','.join([str(x) for x in (inp[:2] + ['...'] + inp[-2:] if len(inp) >= 5 else inp)])
+            label = '{0}({1})'.format(op.__name__, label)
+        Node.__init__(self, Single(default = op((x.v0 for x in inp))), label=label)
+    
+    def __call__(self):
+        self.output(self.op((x.v for x in self.inp)))
+    
+    def get_inputs(self):
+        return self.inp
+    
+########################   
+# ts function
+########################
+def FuncSpec(output_creator, depend_on_names=(), label=''):
+    def wrapper(tsfunc):
+        def wire(*args, **kwargs):
+            nonlocal output_creator, depend_on_names, label
+            if label is '':
+                label = tsfunc.__name__
+            try:
+                sig = inspect.signature(tsfunc)
+                ba = sig.bind(*args, **kwargs)
+                depend_on = [ba.arguments[d_name] for d_name in depend_on_names]
+            except:
+                raise Exception('Cannot bind {0} to arguments!'.format(tsfunc.__name__))
             
+            class FuncNode(Node):
+                __slots__ = ('inputs', 'key_inputs', 'tsfunc')
+                def __init__(self, inputs, key_inputs, tsfunc, depend_on, output_creator, label):
+                    self.inputs = inputs
+                    Node.__init__(self, output_creator, depend_on=depend_on, label=label):
+                        self.inputs = inputs
+                        Node.__init__(self, output_creator, depend_on=depend_on, label=label)
+                        key_inputs['Return'] = self.output
+                        self.key_inputs = key_inputs
+                        self.tsfunc = tsfunc
+                
+                def __call__(self):
+                    self.tsfunc(*self.inputs, **self.key_inputs)
+                
+                def get_inputs(self):
+                    return self.inputs
+                    
+            node = FuncNode(list(arg), keyargs, tsfunc, depend_on, output_creator, label)
+            return node.get_output()
+        return wire
+    return wrapper
+
+
+#####################
+# Sources
+#####################
+class Source(Node):
+    __slots__ = ('time', 'port', 'iter', 'next_value', 'seqno', 'seqno_start', 'seqno_inc')
+    def __init__(self, port, output_creator, label):
+        Node.__init__(self, port, output_creator, label=label)
+        self.seqno = 0
+        self.port = port
+        self.iter = None
+        self.time = time.gMin
+        self.next_value = None
+        self.constructed = True
+    
+    def __lt__(self, other):
+        return self.time < other.time or (self.time == other.time and self.seqno < other.seqno)
+        
+    def __iter__(self):
+        self.time = time.gMin
+        self.next_value = None
+        self.iter = iter(self.port)
+        return self
+    
+    def __next__(self):
+        next_time, self.next_value = next(self.iter)
+        if next_time < self.time:
+            raise Exception('time decreaess in the source {0} at {1}!'.format(str(self), self.time)
+        elif next_time > self.time:
+            self.seqno = 0
+        else:
+            self.seqno += 1
+        self.time = next_time
+        return self
+        
+    def __call__(self):
+        pass
+    
+    def get_inputs(self):
+        return []
+        
+    def reset(self, date, levels):
+        Node.reset(self, date, levels):
+        if hasattr(self.port, 'reset'):
+            self.port.reset(date)
+
+class ValueSource(Source):
+    __slots__ = ()
+    def __init__(self, port, default=float('nan'), label='source'):
+        Source.__init__(self, port, Single(default), label)
+        
+    def __call__(self):
+        self.output(self.next_value)
+        
+class ArraySource(Source):
+    __slots__ = ()
+    def __init__(self, port, N, defaults=None, label='source'):
+        defaults = defaults if defaults else (float('nan'), ) * N
+        creators_array = tuple(Single(v) for v in defaults)
+        Source.__init__(self, port, Array(creators_array), label)
+    
+    def __call__(self):
+        for i, v in enumerate(self.next_value):
+            self.output[i](v)
+            
+            
+class StructSource(Source):
+    __slots__ = ()
+    def __init__(self, port, name, fields, defaults, glue='.', label='source'):
+        creators = [Single(v) for v in defaults]
+        Source.__init__(self, port, Struct(name, fields, creators, glue), label)
+    
+    def __call__(self):
+        for i, v in enumerate(self.next_value):
+            self.output[i](v)
+    
+        
+#####################
+# engine
+#####################
+
+def getNodesRwd(obj):
+    return set(v.node for v in getValues(obj) if v.node is not None)
+
+def getNodesFwd(obj):
+    return set(it.chain.from_iterable(v.observers for v in getValues(obj)))
+
+def iterBreadthFirst(nodes, get_children):
+    setFrom = set()
+    setTo = set(nodes)
+    while(setTo):
+        setFrom = etTo
+        setTo = set()
+        for node in setFrom:
+            for nodeTo in get_children(node):
+                setTo.add(nodeTo)
+            yield node
+
+def getSources(inputs):
+    sources = set()
+    for node in iterBreadthFirst(getNodesRwd(inputs), lambda x: getNodesRwd(x.get_inputs())):
+        if len(node.get_inputs()) == 0:
+            sources.add(node)
+    return sources
+
+def getHeight(sources):
+    return max(node.height for node in iterBreadthFirst(source, lambda x: getNodeFwd(x.output)))
+    
+#########################
+# engine API
+#########################
+
+# globals
+gValueTime = Value(time.gMin, 'time')
+
+
+def Run(outputs, date=None, start=None, end=None)
+    global gNowTime
+    
+    if not outputs:
+        return
+    
+    start = start if start else time.gMin
+    end = end if end else time.gMax
+    
+    sources = getSources(outputs)
+    print('----------- TS Engine -------------')
+    print('date        = {0}\nstart time = {1}\nend time    = {2}\nsources:'.format(date, time.printI64(start), time.printI64(end)))
+    for source in sources:
+        print('     {0}'.format(str(source)))
+    
+    height = getHeight(sources)
+    levels = [set() for _ in range(height+1)]
+    levels = levels
+    chain_levels = it.chain.from_iterable
+    
+    #initialize
+    gValueTime.reset()
+    for node in iterBreadthFirst(sources, lambda x: getNodesFwd(x.output)):
+        node.reset(date, levels)
+        #if d_f: print("Run()[reste]:label={0},class={1},id={2},height={3},depend_on={4}".format(
+        #               node.label, node.__class__, id(node), node.height, sorted(set([id(v.node) for v in deeplistiter(node.depend_on)]))),
+        #               logfile)
+    all_sources = heapq.merge(*sources)
+    next_source = all_sources.__next__
+    tick_time = gValueTime.__call__
+    clear_levels = [level.clear for level in levels]
+    
+    # start iteration
+    time.printStamp('begin ...')
+    source = next(all_sources)
+    while source.time < start:
+        source = next_source()
+    
+    nextTime, nextSeqno = source.time, source.seqno
+    gNowTime, nowSeqno = nextTime, nextSeqno
+    try:
+        while gNowTime < end:
+            while nextTime == gNowTime and nextSeqno == nowSeqno:
+                source()
+                source = next_source()
+                nextTime, nextSeqno = source.time, source.seqno
+            
+            # if d_f: gNowTime_str = printI64(gNowTime)
+            
+            if(gNowTime < nextTime):
+                tick_time(gNowTime)
+            for a in chain_levels(levels):
+                a()
+                
+            for clear_level in clear_levels:
+                clear_level()
+            
+            gNowTime, nowSeqno = nextTime, nextSeqno
+    except StopIteration:
+        tick_time(gNowTime)
+        for a in chain_levels(levels):
+            a()
+        for clear_level in clear_levels:
+            clear_level()
+    time.printStamp('end!')
+    print('--------- TS Engine ----------')
+    
+    
+    
