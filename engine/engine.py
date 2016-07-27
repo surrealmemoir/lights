@@ -4,8 +4,18 @@ import inspect
 import collections
 import operator as op
 
-# need to replicate
-from . import time
+# need to replicate, hack for now
+#from . import time
+
+class A:
+    pass
+
+time = A()
+
+time.gMin = 0
+time.gMax = 214739855
+time.printI64 = lambda x: x
+time.printStamp = print
 
 gNowTime = time.gMin
 
@@ -105,7 +115,7 @@ class Value:
         return BinaryOpNode(self, other, op.truediv, label).get_output()
         
 ###################
-# creatorss
+# creators
 ###################
 
 class Single:
@@ -138,7 +148,8 @@ class Struct:
         
     def __call__(self, node=None, label=''):
         it = zip(self.tuple._fields, self.creator_array)
-        return self.tuple._make(c(node=node, label='{0}{1}{2}'.format(label, self.glue, f) for f, c in it)
+        return self.tuple._make(c(node=node, label='{0}{1}{2}'.format(label, self.glue, f))
+                                for f, c in it)
         
     def _make(self, array):
         return self.tuple._make(array)
@@ -180,7 +191,7 @@ class Node():
             self.depend_on = inputs
         for v in getValues(self.depend_on):
             if (v.node is not None) and (not v.node.constructed):
-                raies Exception('Node {0} cannot depend on not constructed node {1}'.format(str(self), str(v.node)))
+                raise Exception('Node {0} cannot depend on not constructed node {1}'.format(str(self), str(v.node)))
             v.add_dependent(self)
         
         self.constructed = True
@@ -249,7 +260,7 @@ class BinaryOpNode(Node):
         Node.__init__(self, Single(default=op(inp0.v0, inp1.v0)), label=label)
 
     def __call__(self):
-        self.output(self.op(self.inp0.v, self.inp1.v)
+        self.output(self.op(self.inp0.v, self.inp1.v))
         
     def get_inputs(self):
         return [self.inp0, self.inp1]
@@ -291,12 +302,10 @@ def FuncSpec(output_creator, depend_on_names=(), label=''):
                 __slots__ = ('inputs', 'key_inputs', 'tsfunc')
                 def __init__(self, inputs, key_inputs, tsfunc, depend_on, output_creator, label):
                     self.inputs = inputs
-                    Node.__init__(self, output_creator, depend_on=depend_on, label=label):
-                        self.inputs = inputs
-                        Node.__init__(self, output_creator, depend_on=depend_on, label=label)
-                        key_inputs['Return'] = self.output
-                        self.key_inputs = key_inputs
-                        self.tsfunc = tsfunc
+                    Node.__init__(self, output_creator, depend_on=depend_on, label=label)
+                    key_inputs['Return'] = self.output
+                    self.key_inputs = key_inputs
+                    self.tsfunc = tsfunc
                 
                 def __call__(self):
                     self.tsfunc(*self.inputs, **self.key_inputs)
@@ -336,7 +345,7 @@ class Source(Node):
     def __next__(self):
         next_time, self.next_value = next(self.iter)
         if next_time < self.time:
-            raise Exception('time decreaess in the source {0} at {1}!'.format(str(self), self.time)
+            raise Exception('time decreaess in the source {0} at {1}!'.format(str(self), self.time))
         elif next_time > self.time:
             self.seqno = 0
         else:
@@ -351,7 +360,7 @@ class Source(Node):
         return []
         
     def reset(self, date, levels):
-        Node.reset(self, date, levels):
+        Node.reset(self, date, levels)
         if hasattr(self.port, 'reset'):
             self.port.reset(date)
 
@@ -425,7 +434,7 @@ def getHeight(sources):
 gValueTime = Value(time.gMin, 'time')
 
 
-def Run(outputs, date=None, start=None, end=None)
+def Run(outputs, date=None, start=None, end=None):
     global gNowTime
     
     if not outputs:
@@ -491,6 +500,4 @@ def Run(outputs, date=None, start=None, end=None)
             clear_level()
     time.printStamp('end!')
     print('--------- TS Engine ----------')
-    
-    
     
